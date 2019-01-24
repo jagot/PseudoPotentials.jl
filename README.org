@@ -1,0 +1,76 @@
+#+TITLE: PseudoPotentials.jl
+#+AUTHOR: Stefanos Carlström
+#+EMAIL: stefanos.carlstrom@gmail.com
+
+#+PROPERTY: header-args:julia :session *julia-README*
+
+Parser for the pseudopotential data from [[http://www.tc.uni-koeln.de/PP/index.en.html][Stuttgart/Cologne
+database]]. Includes some of their pseudopotentials for noble gases
+out-of-the-box:
+
+#+BEGIN_SRC julia :exports both :results value verbatim
+  using PseudoPotentials
+
+  PseudoPotentials.Xenon
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Relativistic pseudo-potential for Xe ([Kr]ᶜ 4d¹⁰ᶜ 5s² 5p⁶), Z = 54
+Q = 28, ℓ ∈ 0:4, ℓ′ ∈ 1:3
+Data from "K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."
+┌───┬───┬───────────┬────────────┬────┬───┬───────────┬─────────────┐
+│ ℓ │ k │         β │          B │ ℓ′ │ k │         β │           B │
+├───┼───┼───────────┼────────────┼────┼───┼───────────┼─────────────┤
+│ s │ 1 │ 40.005184 │  49.997962 │    │   │           │             │
+│   │ 2 │ 17.812214 │ 281.013303 │    │   │           │             │
+│   │ 3 │   9.30415 │  61.538255 │    │   │           │             │
+│ p │ 1 │ 15.701772 │  67.439142 │  p │ 1 │ 15.701772 │ -134.878283 │
+│   │ 2 │ 15.258608 │ 134.874711 │    │ 2 │ 15.258608 │  134.874711 │
+│   │ 3 │  9.292184 │    14.6633 │    │ 3 │  9.292184 │    -29.3266 │
+│   │ 4 │  8.559003 │   29.35473 │    │ 4 │  8.559003 │    29.35473 │
+│ d │ 1 │   15.1856 │  35.436908 │  d │ 1 │   15.1856 │  -35.436908 │
+│   │ 2 │   14.2845 │  53.195772 │    │ 2 │   14.2845 │   35.463848 │
+│   │ 3 │  7.121889 │   9.046232 │    │ 3 │  7.121889 │   -9.046232 │
+│   │ 4 │  6.991963 │  13.223681 │    │ 4 │  6.991963 │    8.815787 │
+│   │ 5 │  0.623946 │   0.084853 │    │ 5 │  0.623946 │   -0.084853 │
+│   │ 6 │  0.647284 │   0.044155 │    │ 6 │  0.647284 │    0.029436 │
+│ f │ 1 │ 20.881557 │ -23.089295 │  f │ 1 │ 20.881557 │   15.392863 │
+│   │ 2 │ 20.783443 │ -30.074475 │    │ 2 │ 20.783443 │  -15.037237 │
+│   │ 3 │  5.253389 │  -0.288227 │    │ 3 │  5.253389 │    0.192151 │
+│   │ 4 │  5.361188 │  -0.386924 │    │ 4 │  5.361188 │   -0.193462 │
+│ g │ 1 │       1.0 │        0.0 │    │   │           │             │
+└───┴───┴───────────┴────────────┴────┴───┴───────────┴─────────────┘
+#+end_example
+
+If you want to use a pseudopotential, you have to specify the ground
+state configuration on the first line (preceded by a =!=), in the
+notation of [[https://github.com/JuliaAtoms/AtomicLevels.jl][AtomicLevels.jl]]:
+#+BEGIN_SRC julia :exports both :results value verbatim
+  Neon = PP"""! [He] 2s2 2p6
+  !  Q=8., MEFIT, WB, Ref 22.
+  ECP,Ne,2,3,0;
+  1; 2,1.000000,0.00000000; 
+  2; 2,31.860162,112.52543566; 2,12.362219,28.30083454; 
+  2; 2,21.508034,-11.12658543; 2,12.910447,3.38754919; 
+  1; 2,0.850385,-0.18408921; 
+  ! References:
+  ! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Relativistic pseudo-potential for Ne ([He]ᶜ 2s² 2p⁶), Z = 10
+Q = 2, ℓ ∈ 0:3
+Data from "A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."
+┌───┬───┬───────────┬──────────────┐
+│ ℓ │ k │         β │            B │
+├───┼───┼───────────┼──────────────┤
+│ s │ 1 │ 31.860162 │ 112.52543566 │
+│   │ 2 │ 12.362219 │  28.30083454 │
+│ p │ 1 │ 21.508034 │ -11.12658543 │
+│   │ 2 │ 12.910447 │   3.38754919 │
+│ d │ 1 │  0.850385 │  -0.18408921 │
+│ f │ 1 │       1.0 │          0.0 │
+└───┴───┴───────────┴──────────────┘
+#+end_example
