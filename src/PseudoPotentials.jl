@@ -32,12 +32,12 @@ function Base.show(io::IO, ::MIME"text/plain", pp::PseudoPotential)
         [[spectroscopic_label(ℓ′);repeat([""],nk-1)] 1:nk]
     end |> v -> vcat(v...)
     data = [ℓk vcat(pp.Vℓ...)]
-    headers = ["ℓ", "k", "β", "B"]
+    headers = ["ℓ", "k", "n", "β", "B"]
     if ℓmax′ > 0
-        data = [data vcat(repeat([""], size(pp.Vℓ[1],1), 4),
+        data = [data vcat(repeat([""], size(pp.Vℓ[1],1), 5),
                           [ℓ′k vcat(pp.Vℓ′...)],
-                          repeat([""], 1, 4))]
-        headers = vcat(headers, ["ℓ′", "k", "β", "B"])
+                          repeat([""], 1, 5))]
+        headers = vcat(headers, ["ℓ′", "k", "n", "β", "B"])
     end
     pretty_table(io, data, headers)
 end
@@ -46,18 +46,23 @@ end
 \[V_{\mathrm{pp}}(\vec{r})=
 -\frac{Q}{r}+
 \sum_{\ell jk}
-B_{\ell j}^k
-\exp(-\beta_{\ell j}^k r^2)
+B_{\ell j k}
+r^{n_k-2}
+\exp(-\beta_{\ell j k} r^2)
 \mathcal{P}_{\ell j}\]
 =#
 
-# function (pp::PseudoPotential)(orb::RelativisticOrbital, r::Float64)
-#     V = -pp.Q/r
-#     for (k,(B,β)) in enumerate(pp.Bβ[orb.κ])
-#         V += B^k*exp(-β^k*r^2)
-#     end
-#     V
-# end
+function (pp::PseudoPotential)(orb::RelativisticOrbital, r::Vector{Float64})
+    V = -pp.Q./r
+    κ = orb.κ
+    data = κ < 0 ? pp.Vℓ[-κ] : pp.Vℓ′[κ] # What to do if κ is too large?
+    for k in 1:size(data,1)
+        (n,β,B) = data[k,:]
+        V += B * r.^(n-2).*exp.(-β*r.^2)
+    end
+    V
+end
+(pp::PseudoPotential)(orb::RelativisticOrbital, r::Float64) = pp([r])[1]
 
 function parse_pseudopotential_line(pp_line::AbstractString)
     data = split(pp_line, ";")
@@ -65,9 +70,7 @@ function parse_pseudopotential_line(pp_line::AbstractString)
     length(data) == num_terms+2 || throw(ArgumentError("Unrecognizable potential string $(pp_line)"))
     map(1:num_terms) do i
         term = split(strip(data[i+1]),",")
-        num_params = parse(Int, term[1])
-        num_params == 2 || throw(ArgumentError("Don't know how to treat terms with $(num_params) parameters"))
-        parse.(Ref(Float64), term[2:end])'
+        parse.(Ref(Float64), term)'
     end |> p -> vcat(p...)
 end
 

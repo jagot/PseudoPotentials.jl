@@ -43,6 +43,8 @@ Data from "K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 
 └───┴───┴───────────┴────────────┴────┴───┴───────────┴─────────────┘
 #+end_example
 
+[[file:./xenon.svg]]
+
 If you want to use a pseudopotential, you have to specify the ground
 state configuration on the first line (preceded by a =!=), in the
 notation of [[https://github.com/JuliaAtoms/AtomicLevels.jl][AtomicLevels.jl]]:
