@@ -13,6 +13,8 @@ struct PseudoPotential{T} <: AbstractPotential{T}
     reference::String
 end
 AtomicPotentials.charge(pp::PseudoPotential) = num_electrons(pp.gst_config)
+AtomicPotentials.ground_state(pp::PseudoPotential) = pp.gst_config
+
 Base.show(io::IO, pp::PseudoPotential) =
     write(io, "Relativistic pseudo-potential for $(pp.name) ($(pp.gst_config)), Z = $(charge(pp))")
 
@@ -180,6 +182,6 @@ ECP,Rn,60,5,4;
 ! References:
 ! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
 
-export @PP_str
+export @PP_str, @pc_str, charge, ground_state
 
 end # module
