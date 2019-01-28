@@ -1,17 +1,18 @@
 module PseudoPotentials
 using AtomicLevels
 import AtomicLevels: spectroscopic_label
+using AtomicPotentials
 using PrettyTables
 
-struct PseudoPotential
+struct PseudoPotential{T} <: AbstractPotential{T}
     name::String
     gst_config::Configuration{Orbital{Int}}
     Q::Int
-    Vℓ::Vector{Matrix{Float64}} # ℓ ∈ 0:ℓmax
-    Vℓ′::Vector{Matrix{Float64}} # ℓ′ ∈ 1:ℓmax′
+    Vℓ::Vector{Matrix{T}} # ℓ ∈ 0:ℓmax
+    Vℓ′::Vector{Matrix{T}} # ℓ′ ∈ 1:ℓmax′
     reference::String
 end
-charge(pp::PseudoPotential) = num_electrons(pp.gst_config)
+AtomicPotentials.charge(pp::PseudoPotential) = num_electrons(pp.gst_config)
 Base.show(io::IO, pp::PseudoPotential) =
     write(io, "Relativistic pseudo-potential for $(pp.name) ($(pp.gst_config)), Z = $(charge(pp))")
 
@@ -52,7 +53,7 @@ r^{n_k-2}
 \mathcal{P}_{\ell j}\]
 =#
 
-function (pp::PseudoPotential)(orb::RelativisticOrbital, r::Vector{Float64})
+function (pp::PseudoPotential{T})(orb::RelativisticOrbital, r::AbstractVector{T}) where T
     V = -pp.Q./r
     κ = orb.κ
     data = κ < 0 ? pp.Vℓ[-κ] : pp.Vℓ′[κ] # What to do if κ is too large?
@@ -62,19 +63,19 @@ function (pp::PseudoPotential)(orb::RelativisticOrbital, r::Vector{Float64})
     end
     V
 end
-(pp::PseudoPotential)(orb::RelativisticOrbital, r::Float64) = pp([r])[1]
+(pp::PseudoPotential{T})(orb::RelativisticOrbital, r::T) where T = pp([r])[1]
 
-function parse_pseudopotential_line(pp_line::AbstractString)
+function parse_pseudopotential_line(::Type{T}, pp_line::AbstractString) where T
     data = split(pp_line, ";")
     num_terms = parse(Int, data[1])
     length(data) == num_terms+2 || throw(ArgumentError("Unrecognizable potential string $(pp_line)"))
     map(1:num_terms) do i
         term = split(strip(data[i+1]),",")
-        parse.(Ref(Float64), term)'
+        parse.(Ref(T), term)'
     end |> p -> vcat(p...)
 end
 
-function parse_pseudopotential(pp_string::String)
+function parse_pseudopotential(::Type{T}, pp_string::String) where T
     lines = split(pp_string, "\n")
     gst_config = parse(Configuration{Orbital},
                        lstrip(lines[1], ['!', ' ']))
@@ -82,17 +83,17 @@ function parse_pseudopotential(pp_string::String)
     i === nothing && error("Could not find start of data")
     header = split(split(lines[i], ";")[1], ",")
     kind = header[1]
-    element = header[2]
+    element = String(header[2])
     Q = parse(Int, header[3])
     ℓmax = parse(Int, header[4])
     ℓmax′ = parse(Int, header[5])
     ii = i
     Vℓ = map(vcat(ℓmax,0:ℓmax-1)) do ℓ
-        ℓ => parse_pseudopotential_line(lines[ii+=1])
+        ℓ => parse_pseudopotential_line(T, lines[ii+=1])
     end |> v -> last.(sort(v, by=first))
     Vℓ′ = map(1:ℓmax′) do ℓ′
-        parse_pseudopotential_line(lines[ii+=1])
-    end
+        parse_pseudopotential_line(T, lines[ii+=1])
+    end |> Vector{Matrix{T}}
     reference = map(lines[ii+2:end]) do line
         lstrip(line, ['!', '[', ']', ' ', '0':'9'...])
     end |> l -> join(l, "\n")
@@ -100,7 +101,7 @@ function parse_pseudopotential(pp_string::String)
 end
 
 macro PP_str(pp_string)
-    parse_pseudopotential(pp_string)
+    parse_pseudopotential(Float64, pp_string)
 end
 
 Neon = PP"""! [He] 2s2 2p6
