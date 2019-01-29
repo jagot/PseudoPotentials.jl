@@ -182,6 +182,6 @@ ECP,Rn,60,5,4;
 ! References:
 ! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
 
-export @PP_str, @pc_str, charge, ground_state
+export @PP_str, @pc_str, AbstractPotential, charge, ground_state
 
 end # module
