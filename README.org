@@ -76,3 +76,10 @@ Data from "A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (
 │ f │ 1 │       1.0 │          0.0 │
 └───┴───┴───────────┴──────────────┘
 #+end_example
+
+* Note on usage
+  You are free to use this package for your research, but if you
+  publish results acquired using a certain pseudopotential, make sure
+  to cite the publication it originated from (e.g. /A. Nicklass,
+  M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)./ for
+  the neon/xenon pseudopotentials illustrated above).
