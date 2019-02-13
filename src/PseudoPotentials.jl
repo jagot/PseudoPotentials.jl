@@ -58,7 +58,16 @@ r^{n_k-2}
 function (pp::PseudoPotential{T})(orb::RelativisticOrbital, r::AbstractVector{T}) where T
     V = -pp.Q./r
     κ = orb.κ
-    data = κ < 0 ? pp.Vℓ[-κ] : pp.Vℓ′[κ] # What to do if κ is too large?
+    if isempty(pp.Vℓ′) && κ > 0
+        κ = AtomicLevels.flip_j(orb).κ
+    end
+    data = if κ < 0
+        -κ > length(pp.Vℓ) && return V
+        pp.Vℓ[-κ]
+    else
+        κ > length(pp.Vℓ′) && return V
+        pp.Vℓ′[κ]
+    end
     for k in 1:size(data,1)
         (n,β,B) = data[k,:]
         V += B * r.^(n-2).*exp.(-β*r.^2)
