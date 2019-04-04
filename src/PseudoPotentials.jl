@@ -1,10 +1,10 @@
 module PseudoPotentials
 using AtomicLevels
-import AtomicLevels: spectroscopic_label
+import AtomicLevels: spectroscopic_label, AbstractOrbital
 using AtomicPotentials
 using PrettyTables
 
-struct PseudoPotential{T} <: AbstractPotential{T}
+struct PseudoPotential{T,relativistic} <: AbstractPotential{T}
     name::String
     gst_config::Configuration{Orbital{Int}}
     Q::Int
@@ -15,15 +15,21 @@ end
 AtomicPotentials.charge(pp::PseudoPotential) = num_electrons(pp.gst_config)
 AtomicPotentials.ground_state(pp::PseudoPotential) = pp.gst_config
 
-Base.show(io::IO, pp::PseudoPotential) =
-    write(io, "Relativistic pseudo-potential for $(pp.name) ($(pp.gst_config)), Z = $(charge(pp))")
+function Base.show(io::IO, pp::PseudoPotential{T,relativistic}) where {T,relativistic}
+    if relativistic
+        write(io, "Relativistic pseudo-potential")
+    else
+        write(io, "Pseudo-potential")
+    end
+    write(io, " for $(pp.name) ($(pp.gst_config)), Z = $(charge(pp))")
+end
 
 function Base.show(io::IO, ::MIME"text/plain", pp::PseudoPotential)
     show(io, pp)
     println(io)
     ℓmax = length(pp.Vℓ)-1
     ℓmax′ = length(pp.Vℓ′)
-    print(io, "Q = $(pp.Q), ℓ ∈ 0:$(ℓmax)")
+    print(io, "Long-range Q = $(pp.Q), ℓ ∈ 0:$(ℓmax)")
     ℓmax′ > 0 && print(io, ", ℓ′ ∈ 1:$(length(pp.Vℓ′))")
     println(io, "\nData from \"$(pp.reference)\"")
     ℓk = map(enumerate(0:ℓmax)) do (i,ℓ)
@@ -55,7 +61,7 @@ r^{n_k-2}
 \mathcal{P}_{\ell j}\]
 =#
 
-function (pp::PseudoPotential{T})(orb::RelativisticOrbital, r::AbstractVector{T}) where T
+function (pp::PseudoPotential{T,true})(orb::RelativisticOrbital, r::AbstractVector{T}) where T
     V = -pp.Q./r
     κ = orb.κ
     if isempty(pp.Vℓ′) && κ > 0
@@ -74,7 +80,29 @@ function (pp::PseudoPotential{T})(orb::RelativisticOrbital, r::AbstractVector{T}
     end
     V
 end
-(pp::PseudoPotential{T})(orb::RelativisticOrbital, r::T) where T = pp([r])[1]
+
+function (pp::PseudoPotential{T,true})(orb::SpinOrbital, r::AbstractVector{T}) where T
+    V = zeros(T, length(r))
+    for ((rorb,mj),coeff) in jj2lsj(orb)
+        V += coeff*pp(rorb, r)
+    end
+    V
+end
+
+function (pp::PseudoPotential{T,false})(orb::SpinOrbital, r::AbstractVector{T}) where T
+    V = -pp.Q./r
+    ℓ = orb.orb.ℓ
+    ℓ >= length(pp.Vℓ) && return V
+    data = pp.Vℓ[ℓ+1]
+    for k in 1:size(data,1)
+        (n,β,B) = data[k,:]
+        V += B * r.^(n-2).*exp.(-β*r.^2)
+    end
+
+    V
+end
+
+(pp::PseudoPotential{T})(orb::AbstractOrbital, r::T) where T = pp(orb, [r])[1]
 
 function parse_pseudopotential_line(::Type{T}, pp_line::AbstractString) where T
     data = split(pp_line, ";")
@@ -86,7 +114,7 @@ function parse_pseudopotential_line(::Type{T}, pp_line::AbstractString) where T
     end |> p -> vcat(p...)
 end
 
-function parse_pseudopotential(::Type{T}, pp_string::String) where T
+function parse_pseudopotential(::Type{T}, pp_string::String, relativistic::Bool) where T
     lines = split(pp_string, "\n")
     gst_config = parse(Configuration{Orbital},
                        lstrip(lines[1], ['!', ' ']))
@@ -101,10 +129,12 @@ function parse_pseudopotential(::Type{T}, pp_string::String) where T
     Z == nelec ||
         throw(ArgumentError("Atom number Z = $Z does not match number of electrons of ground state configuration $(gst_config) => $(nelec) electrons"))
 
-    Q = parse(Int, header[3])
+    Q̃ = parse(Int, header[3])
     ncore = num_electrons(core(gst_config))
-    Q == ncore ||
-        throw(ArgumentError("Charge modelled by pseudopotential, Q = $Q, does not match number of core electrons in ground state configuration: $(core(gst_config)) => $(ncore) electrons"))
+    Q̃ == ncore ||
+        throw(ArgumentError("Charge modelled by pseudopotential, Q̃ = $(Q̃), does not match number of core electrons in ground state configuration: $(core(gst_config)) => $(ncore) electrons"))
+
+    Q = Z-Q̃ # Long-range charge of potential
 
     ℓmax = parse(Int, header[4])
     ℓmax′ = parse(Int, header[5])
@@ -118,14 +148,31 @@ function parse_pseudopotential(::Type{T}, pp_string::String) where T
     reference = map(lines[ii+2:end]) do line
         lstrip(line, ['!', '[', ']', ' ', '0':'9'...])
     end |> l -> join(l, "\n")
-    PseudoPotential(element, gst_config, Q, Vℓ, Vℓ′, reference)
+    PseudoPotential{T,relativistic}(element, gst_config, Q, Vℓ, Vℓ′, reference)
 end
 
 macro PP_str(pp_string)
-    parse_pseudopotential(Float64, pp_string)
+    parse_pseudopotential(Float64, pp_string, false)
 end
 
-Neon = PP"""! [He] 2s2 2p6
+macro RPP_str(pp_string)
+    parse_pseudopotential(Float64, pp_string, true)
+end
+
+# * Misc pseudopotentials
+# ** Neon
+
+NeonHF = PP"""! [He] 2s2 2p6
+!  Q=8., MEFIT, HF, Ref 22.
+ECP,Ne,2,3,0;
+1; 2,1.000000,0.00000000;
+2; 2,32.029855,112.52822460; 2,12.294136,28.44589604;
+2; 2,21.525406,-10.93982872; 2,13.091176,3.39426049;
+1; 2,0.850385,-0.16409678;
+! References:
+! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
+
+NeonWB = PP"""! [He] 2s2 2p6
 !  Q=8., MEFIT, WB, Ref 22.
 ECP,Ne,2,3,0;
 1; 2,1.000000,0.00000000;
@@ -135,7 +182,20 @@ ECP,Ne,2,3,0;
 ! References:
 ! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
 
-Argon = PP"""! [Ne] 3s2 3p6
+# ** Argon
+
+ArgonHF = PP"""! [Ne] 3s2 3p6
+!  Q=8., MEFIT, HF, Ref 22.
+ECP,Ar,10,4,0;
+1; 2,1.000000,0.00000000;
+2; 2,10.291970,68.69327818; 2,3.947937,24.48814203;
+2; 2,5.388907,27.59672144; 2,2.704463,4.13654627;
+2; 2,8.084705,-8.14025335; 2,4.018469,-1.66241708;
+1; 2,5.295301,-3.40922653;
+! References:
+! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
+
+ArgonWB = PP"""! [Ne] 3s2 3p6
 !  Q=8., MEFIT, WB, Ref 22.
 ECP,Ar,10,4,0;
 1; 2,1.000000,0.00000000;
@@ -146,7 +206,9 @@ ECP,Ar,10,4,0;
 ! References:
 ! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
 
-Krypton = PP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
+# ** Krypton
+
+KryptonDF = RPP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Kr,10,4,3;
 1; 2,1.000000,0.000000;
@@ -161,7 +223,32 @@ ECP,Kr,10,4,3;
 ! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003).
 """
 
-Xenon = PP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
+# ** Xenon
+
+XenonHF = PP"""! [Ar] 3d10c 4s2c 4p6c 4d10c 5s2 5p6
+!  Q=8., MEFIT, HF, Ref 22.
+ECP,Xe,46,4,0;
+1; 2,1.000000,0.00000000;
+2; 2,3.815600,122.76231371; 2,1.878604,8.20135456;
+2; 2,3.003078,68.75731963; 2,1.283819,3.64084871;
+2; 2,2.027610,23.08319830; 2,0.830435,3.17298823;
+2; 2,6.246157,-48.30201724; 2,1.564998,-6.91572892;
+! References:
+! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
+
+XenonWB = PP"""! [Ar] 3d10c 4s2c 4p6c 4d10c 5s2 5p6
+!  Q=8., MEFIT, WB, Ref 22; CPP: alpha=0.8345;delta=0.97391;ncut=1.
+ECP,Xe,46,5,0;
+1; 2,1.000000,0.00000000;
+2; 2,3.940263,122.76382934; 2,2.277264,8.30885115;
+2; 2,3.028373,68.82300437; 2,1.394319,3.64674223;
+2; 2,2.122605,23.65207854; 2,0.798669,3.25844113;
+2; 2,6.164360,-47.70319876; 2,1.542374,-6.54113991;
+1; 2,1.847892,-7.10585060;
+! References:
+! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
+
+XenonDF = RPP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Xe,28,4,3;
 1; 2,1.000000,0.000000;
@@ -175,7 +262,9 @@ ECP,Xe,28,4,3;
 ! References:
 ! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
 
-Radon = PP"""! [Kr] 4d10c 4f14c 5s2 5p6 5d10 6s2 6p6
+# ** Radon
+
+RadonDF = RPP"""! [Kr] 4d10c 4f14c 5s2 5p6 5d10 6s2 6p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Rn,60,5,4;
 1; 2,1.000000,0.000000;

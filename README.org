@@ -11,7 +11,7 @@ out-of-the-box:
 #+BEGIN_SRC julia :exports both :results value verbatim
   using PseudoPotentials
 
-  PseudoPotentials.Xenon
+  PseudoPotentials.XenonDF
 #+END_SRC
 
 #+RESULTS:
@@ -62,7 +62,7 @@ notation of [[https://github.com/JuliaAtoms/AtomicLevels.jl][AtomicLevels.jl]]:
 
 #+RESULTS:
 #+begin_example
-Relativistic pseudo-potential for Ne ([He]ᶜ 2s² 2p⁶), Z = 10
+Pseudo-potential for Ne ([He]ᶜ 2s² 2p⁶), Z = 10
 Q = 2, ℓ ∈ 0:3
 Data from "A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."
 ┌───┬───┬───────────┬──────────────┐
