@@ -1,0 +1,106 @@
+struct RelativisticPseudoPotential{T} <: AbstractPseudoPotential{T}
+    name::String
+    gst_config::Configuration{Orbital{Int}}
+    Q::Int
+    V₋::Vector{GaussianExpansion{T}} # For negative κ
+    V₊::Vector{GaussianExpansion{T}} # For positive κ
+    reference::String
+end
+
+AtomicPotentials.charge(pp::RelativisticPseudoPotential) = num_electrons(pp.gst_config)
+AtomicPotentials.ground_state(pp::RelativisticPseudoPotential) = pp.gst_config
+
+Base.show(io::IO, pp::RelativisticPseudoPotential{T}) where {T} =
+    write(io, "Relativistic pseudo-potential for $(pp.name) ($(pp.gst_config)), Z = $(charge(pp))")
+
+function κrange(pp::RelativisticPseudoPotential)
+    κ₋max = length(pp.V₋)
+    κ₊max = length(pp.V₊)
+
+    sort(vcat(-1:-1:-κ₋max,1:κ₊max), lt=(a,b)->abs(a)<abs(b) || abs(a)==abs(b) && a<0)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", pp::RelativisticPseudoPotential)
+    show(io, pp)
+    println(io)
+    κ₋max = length(pp.V₋)
+    κ₊max = length(pp.V₊)
+    print(io, "Long-range Q = $(pp.Q), κ₋ ∈ -1:-1:$(-κ₋max)")
+    κ₊max > 0 && print(io, ", κ₊ ∈ 1:$(κ₊max)")
+    println(io, "\nData from \"$(pp.reference)\"")
+
+    κs = κrange(pp)
+
+    data = map(κs) do κ
+        data = κ > 0 ? pp.V₊[κ] : pp.V₋[-κ]
+        nk = length(data)
+        ℓ = AtomicLevels.kappa_to_ℓ(κ)
+        j = AtomicLevels.kappa_to_j(κ)
+        hcat([spectroscopic_label(ℓ);repeat([""],nk-1)],
+             [j;repeat([""],nk-1)],
+             1:nk, data.n, data.B, data.β)
+    end |> v -> vcat(v...)
+
+    headers = ["ℓ", "j", "k", "n", "B", "β"]
+
+    pretty_table(io, data, headers)
+end
+
+function (pp::RelativisticPseudoPotential{T})(orb::RelativisticOrbital, r::AbstractVector{T}) where T
+    V = -pp.Q./r
+
+    κ = orb.κ
+
+    data = if κ < 0
+        -κ > length(pp.V₋) && return V
+        pp.V₋[-κ]
+    else
+        κ > length(pp.V₊) && return V
+        pp.V₊[κ]
+    end
+    V += data(r)
+
+    V
+end
+
+function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVector{T},
+                              a::SpinOrbital, b::SpinOrbital) where T
+    # This returns the (off-)diagonal, spin–orbit part of the
+    # relativistic pseudopotential.
+    s = HalfInteger(1,2)
+    ℓ,mℓa = jmⱼ(a)
+    mas  = a.spin ? s : -s
+    ℓb,mℓb = jmⱼ(b)
+    mbs = b.spin ? s : -s
+
+    @assert ℓ == ℓb
+
+    V = zeros(T, length(r))
+    κs = κrange(pp)
+
+    for j = [ℓ+HalfInteger(1,2),
+             ℓ-HalfInteger(1,2)]
+        κ = AtomicLevels.ℓj_to_kappa(ℓ,j)
+        j ≥ abs(mℓa+mas) && κ ∈ κs || continue
+
+        coeff = clebschgordan(
+            ℓ,mℓa,s,mas,j
+        )*clebschgordan(
+            ℓ,mℓb,s,mbs,j
+        )
+        V += coeff*((κ > 0 ? pp.V₊[κ] : pp.V₋[-κ])(r))
+    end
+
+    V
+end
+
+function (pp::RelativisticPseudoPotential{T})(orb::SpinOrbital, r::AbstractVector{T}) where T
+    V = -pp.Q./r
+
+    V += spin_orbit_potential(pp, r, orb, orb)
+
+    V
+end
+
+
+(pp::RelativisticPseudoPotential{T})(orb::AbstractOrbital, r::T) where T = pp(orb, [r])[1]
