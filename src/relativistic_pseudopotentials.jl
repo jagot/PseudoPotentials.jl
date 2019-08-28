@@ -67,7 +67,7 @@ function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVec
                               a::SpinOrbital, b::SpinOrbital) where T
     # This returns the (off-)diagonal, spin–orbit part of the
     # relativistic pseudopotential.
-    s = HalfInteger(1,2)
+    s = half(1)
     ℓ,mℓa = jmⱼ(a)
     mas  = a.spin ? s : -s
     ℓb,mℓb = jmⱼ(b)
@@ -78,8 +78,8 @@ function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVec
     V = zeros(T, length(r))
     κs = κrange(pp)
 
-    for j = [ℓ+HalfInteger(1,2),
-             ℓ-HalfInteger(1,2)]
+    for j = [ℓ+half(1),
+             ℓ-half(1)]
         κ = AtomicLevels.ℓj_to_kappa(ℓ,j)
         j ≥ abs(mℓa+mas) && κ ∈ κs || continue
 

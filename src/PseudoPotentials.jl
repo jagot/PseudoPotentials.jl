@@ -5,6 +5,7 @@ using AtomicPotentials
 using AngularMomentumAlgebra
 import AngularMomentumAlgebra: jmⱼ
 using WignerSymbols
+using HalfIntegers
 using PrettyTables
 
 abstract type AbstractPseudoPotential{T} <: AbstractPotential{T} end

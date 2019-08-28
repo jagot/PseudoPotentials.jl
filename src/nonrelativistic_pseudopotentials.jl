@@ -77,7 +77,7 @@ function spin_orbit_potential(pp::ScalarSORelativisticPseudoPotential{T}, r::Abs
                               a::SpinOrbital, b::SpinOrbital) where T
     # This returns the (off-)diagonal, spin–orbit part of the
     # relativistic pseudopotential.
-    s = HalfInteger(1,2)
+    s = half(1)
     ℓ,mℓa = jmⱼ(a)
     mas  = a.spin ? s : -s
     ℓb,mℓb = jmⱼ(b)
@@ -93,15 +93,15 @@ function spin_orbit_potential(pp::ScalarSORelativisticPseudoPotential{T}, r::Abs
     #   Handbook of Relativistic Quantum Chemistry (pp. 449–478). : Springer
     #   Berlin Heidelberg.
     coeff = ℓ*clebschgordan(
-        ℓ,mℓa,s,mas,ℓ+HalfInteger(1,2)
+        ℓ,mℓa,s,mas,ℓ+half(1)
     )*clebschgordan(
-        ℓ,mℓb,s,mbs,ℓ+HalfInteger(1,2)
+        ℓ,mℓb,s,mbs,ℓ+half(1)
     )
     if abs(mℓa+mas) < ℓ
         coeff -= (ℓ+1)*clebschgordan(
-            ℓ,mℓa,s,mas,ℓ-HalfInteger(1,2)
+            ℓ,mℓa,s,mas,ℓ-half(1)
         )*clebschgordan(
-            ℓ,mℓb,s,mbs,ℓ-HalfInteger(1,2)
+            ℓ,mℓb,s,mbs,ℓ-half(1)
         )
     end
 
