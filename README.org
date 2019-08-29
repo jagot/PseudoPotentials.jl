@@ -4,9 +4,10 @@
 
 #+PROPERTY: header-args:julia :session *julia-README*
 
-Parser for the pseudopotential data from [[http://www.tc.uni-koeln.de/PP/index.en.html][Stuttgart/Cologne
+Parser for the pseudopotential data from the [[http://www.tc.uni-koeln.de/PP/index.en.html][Stuttgart/Cologne
 database]]. Includes some of their pseudopotentials for noble gases
-out-of-the-box:
+out-of-the-box (see [[./utils/]] for instructions on how to easily acquire
+more pseudpotentials):
 
 #+BEGIN_SRC julia :exports both :results value verbatim
   using PseudoPotentials
