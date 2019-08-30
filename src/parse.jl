@@ -60,14 +60,6 @@ function parse_pseudopotential(::Type{T}, pp_string::String, relativistic::Bool)
     PseudoPotential{T,relativistic}(element, gst_config, Q, Vℓ, Vℓ′, reference)
 end
 
-macro PP_str(pp_string)
-    parse_pseudopotential(Float64, pp_string, false)
-end
-
-macro SSOPP_str(pp_string)
-    parse_pseudopotential(Float64, pp_string, true)
-end
-
 function parse_relativistic_pseudopotential(::Type{T}, pp_string::String) where T
     element, gst_config, Q, header, lines = parse_header(pp_string)
 
@@ -84,6 +76,12 @@ function parse_relativistic_pseudopotential(::Type{T}, pp_string::String) where 
     RelativisticPseudoPotential{T}(element, gst_config, Q, V₋, V₊, reference)
 end
 
-macro RPP_str(pp_string)
-    parse_relativistic_pseudopotential(Float64, pp_string)
+macro PP_str(pp_string, suffix="")
+    if suffix == "" || suffix == "sso"
+        parse_pseudopotential(Float64, pp_string, suffix=="sso")
+    elseif suffix == "r"
+        parse_relativistic_pseudopotential(Float64, pp_string)
+    else
+        throw(ArgumentError("Unkown pseudopotential suffix $(suffix)"))
+    end
 end

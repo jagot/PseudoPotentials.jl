@@ -46,7 +46,7 @@ ECP,Ar,10,4,0;
 
 # * Calcium
 
-CalciumDF = SSOPP"""! [Ne] 3s2 3p6 4s2
+CalciumDF = PP"""! [Ne] 3s2 3p6 4s2
 !  Q=10., MEFIT, MCDHF+Breit, Ref 41.
 ECP,Ca,10,4,3;
 1; 2,1.,0.;
@@ -60,11 +60,11 @@ ECP,Ca,10,4,3;
 
 ! References:
 ! [41] I.S. Lim, H. Stoll, P. Schwerdtfeger, J. Chem. Phys. 124, 034107 (2006).
-"""
+"""sso
 
 # * Krypton
 
-KryptonDF = SSOPP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
+KryptonDF = PP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Kr,10,4,3;
 1; 2,1.000000,0.000000;
@@ -77,9 +77,9 @@ ECP,Kr,10,4,3;
 2; 2,15.437567,0.815593; 2,22.055742,-1.495617;
 ! References:
 ! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003).
-"""
+"""sso
 
-KryptonDF2c = RPP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
+KryptonDF2c = PP"""! [Ne] 3s2 3p6 3d10 4s2 4p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Kr,10,4,3;
 3; 2,70.034410,49.953835; 2,31.895971,369.978238; 2,7.353728,10.054544;
@@ -90,7 +90,7 @@ ECP,Kr,10,4,3;
 3; 2,50.768165,-46.472192; 2,15.479497,-0.733528; 2,2.877154,0.172203;
 1; 2,15.437567,-2.854575;
 ! References:
-! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
+! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""r
 
 # * Xenon
 
@@ -117,7 +117,7 @@ ECP,Xe,46,5,0;
 ! References:
 ! [22] A. Nicklass, M. Dolg, H. Stoll, H. Preuss, J. Chem. Phys. 102, 8942 (1995)."""
 
-XenonDF = SSOPP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
+XenonDF = PP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Xe,28,4,3;
 1; 2,1.000000,0.000000;
@@ -129,9 +129,9 @@ ECP,Xe,28,4,3;
 6; 2,15.185600,-35.436908; 2,14.284500,35.463848; 2,7.121889,-9.046232; 2,6.991963,8.815787; 2,0.623946,-0.084853; 2,0.647284,0.029436;
 4; 2,20.881557,15.392863; 2,20.783443,-15.037237; 2,5.253389,0.192151; 2,5.361188,-0.193462;
 ! References:
-! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
+! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""sso
 
-XenonDF2c = RPP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
+XenonDF2c = PP"""! [Ar] 3d10c 4s2 4p6 4d10 5s2 5p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Xe,28,4,3;
 3; 2,40.005184,49.997962; 2,17.812214,281.013303; 2,9.304150,61.538255;
@@ -142,11 +142,11 @@ ECP,Xe,28,4,3;
 3; 2,15.185600,88.592271; 2,7.121889,22.615580; 2,0.623946,0.212133;
 2; 2,20.881557,-53.875022; 2,5.253389,-0.672529;
 ! References:
-! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
+! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""r
 
 # * Radon
 
-RadonDF = SSOPP"""! [Kr] 4d10c 4f14c 5s2 5p6 5d10 6s2 6p6
+RadonDF = PP"""! [Kr] 4d10c 4f14c 5s2 5p6 5d10 6s2 6p6
 !  Q=26., MEFIT, MCDHF+Breit, Ref 36.
 ECP,Rn,60,5,4;
 1; 2,1.000000,0.000000;
@@ -160,4 +160,4 @@ ECP,Rn,60,5,4;
 4; 2,6.348571,-14.531526; 2,6.295949,14.473402; 2,2.882118,-0.964910; 2,2.908048,1.088982;
 4; 2,11.015205,12.614048; 2,10.909853,-12.226448; 2,3.482761,0.287400; 2,3.600418,-0.311815;
 ! References:
-! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""
+! [36] K.A. Peterson, D. Figgen, E. Goll, H. Stoll, M. Dolg, J. Chem. Phys. 119, 11113 (2003)."""sso
