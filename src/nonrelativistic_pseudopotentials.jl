@@ -7,6 +7,13 @@ struct PseudoPotential{T,relativistic} <: AbstractPseudoPotential{T}
     reference::String
 end
 
+Base.:(==)(a::PseudoPotential{<:Any,ra}, b::PseudoPotential{<:Any,rb}) where {ra,rb} =
+    ra == rb && a.gst_config == b.gst_config && a.Q == b.Q &&
+    a.Vℓ == b.Vℓ && a.Vℓ′ == b.Vℓ′
+
+Base.hash(pp::PseudoPotential{<:Any,relativistic}, h::UInt) where relativistic =
+    hash((relativistic, pp.gst_config, pp.Q, pp.Vℓ, pp.Vℓ′), h)
+
 const ScalarSORelativisticPseudoPotential{T} = PseudoPotential{T,true}
 
 AtomicPotentials.charge(pp::PseudoPotential) = num_electrons(pp.gst_config)
