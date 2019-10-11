@@ -64,22 +64,22 @@ function (pp::RelativisticPseudoPotential{T})(orb::RelativisticOrbital, r::Abstr
 end
 
 function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVector{T},
-                              a::SpinOrbital, b::SpinOrbital) where T
+                              a::SpinOrbital{<:Orbital}, b::SpinOrbital{<:Orbital}) where T
     # This returns the (off-)diagonal, spin–orbit part of the
     # relativistic pseudopotential.
     s = half(1)
     ℓ,mℓa = jmⱼ(a)
-    mas  = a.spin ? s : -s
+    mas  = spin(a)
     ℓb,mℓb = jmⱼ(b)
-    mbs = b.spin ? s : -s
-
-    @assert ℓ == ℓb
+    mbs = spin(b)
 
     V = zeros(T, length(r))
+
+    ℓ == ℓb || return V
+
     κs = κrange(pp)
 
-    for j = [ℓ+half(1),
-             ℓ-half(1)]
+    for j = [ℓ+s, ℓ-s]
         κ = AtomicLevels.ℓj_to_kappa(ℓ,j)
         j ≥ abs(mℓa+mas) && κ ∈ κs || continue
 
@@ -89,6 +89,25 @@ function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVec
             ℓ,mℓb,s,mbs,j
         )
         V += coeff*((κ > 0 ? pp.V₊[κ] : pp.V₋[-κ])(r))
+    end
+
+    V
+end
+
+function spin_orbit_potential(pp::RelativisticPseudoPotential{T}, r::AbstractVector{T},
+                              a::SpinOrbital{<:RelativisticOrbital}, b::SpinOrbital{<:RelativisticOrbital}) where T
+    # This returns the (off-)diagonal, spin–orbit part of the
+    # relativistic pseudopotential.
+    κ,κb = a.orb.κ,b.orb.κ
+
+    V = zeros(T, length(r))
+
+    a.orb.ℓ == b.orb.ℓ && a.orb.j == b.orb.j && a.m == b.m || return V
+
+    κs = κrange(pp)
+
+    if κ ∈ κs
+        V += (κ > 0 ? pp.V₊[κ] : pp.V₋[-κ])(r)
     end
 
     V

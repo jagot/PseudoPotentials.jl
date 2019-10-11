@@ -3,7 +3,7 @@ using AtomicLevels
 import AtomicLevels: spectroscopic_label, AbstractOrbital
 using AtomicPotentials
 using AngularMomentumAlgebra
-import AngularMomentumAlgebra: jmⱼ
+import AngularMomentumAlgebra: jmⱼ, spin
 using WignerSymbols
 using HalfIntegers
 using PrettyTables
