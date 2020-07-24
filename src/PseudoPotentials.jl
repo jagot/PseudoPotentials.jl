@@ -2,6 +2,7 @@ module PseudoPotentials
 using AtomicLevels
 import AtomicLevels: spectroscopic_label, AbstractOrbital
 using AtomicPotentials
+import AtomicPotentials: islocal
 using AngularMomentumAlgebra
 import AngularMomentumAlgebra: jmⱼ, spin
 using WignerSymbols
@@ -9,6 +10,8 @@ using HalfIntegers
 using PrettyTables
 
 abstract type AbstractPseudoPotential{T} <: AbstractPotential{T} end
+
+islocal(::AbstractPseudoPotential) = false
 
 include("gaussian_expansions.jl")
 include("nonrelativistic_pseudopotentials.jl")
